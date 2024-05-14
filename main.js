@@ -5,13 +5,13 @@ import { spawn } from 'child_process';
 import psList from 'ps-list';
 import Store from 'electron-store';
 import axios from 'axios';
-import { setDefaultAutoSelectFamily } from 'net';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const store = new Store();
 
 let mainWindow = null;
 let moonlightProcess = null;
+let otherProcesses = []; // Array to track other spawned processes
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -33,6 +33,7 @@ function createWindow() {
 
     mainWindow.on('closed', () => {
         mainWindow = null;
+        terminateProcesses(); // Terminate processes when the main window is closed
     });
 }
 
@@ -111,7 +112,6 @@ async function getNetworkId(sessionId, event) {
     return networkId;
 }
 
-
 ipcMain.on('open-moonlight', async () => {
     console.log("success open-moonlight!");
     try {
@@ -152,13 +152,16 @@ ipcMain.on('open-moonlight', async () => {
         ];
 
         // Spawn the PowerShell process
-        const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
+        moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
             stdio: 'inherit', // Show the terminal window
             windowsHide: false // Ensure the terminal window is not hidden
         });
 
         console.log("should be running the terminal now?")
         
+        // Track the spawned process
+        otherProcesses.push(moonlightProcess);
+
         // Check if Moonlight is running mid-process
         const running = await isMoonlightRunning();
         mainWindow.webContents.send('moonlight-status', running);
@@ -238,7 +241,6 @@ ipcMain.on('refresh-access-token', async (event) => {
     }
 });
 
-
 ipcMain.on('cancel-loading', () => {
     // Check if moonlightProcess is defined and not null
     if (moonlightProcess && !moonlightProcess.killed) {
@@ -249,7 +251,6 @@ ipcMain.on('cancel-loading', () => {
     mainWindow.loadURL(`file://${__dirname}/mainpage.html`);
 });
 
-// maybe not used
 ipcMain.on('get-network-id', (event) => {
     const networkId = store.get('networkId');
     if (networkId !== null && networkId !== undefined) {
@@ -280,3 +281,15 @@ ipcMain.on('logout', () => {
     store.delete('refreshToken');
     mainWindow.loadURL(`file://${__dirname}/login.html`);
 });
+
+// Function to terminate all tracked processes
+function terminateProcesses() {
+    if (moonlightProcess && !moonlightProcess.killed) {
+        moonlightProcess.kill();
+    }
+    for (const proc of otherProcesses) {
+        if (!proc.killed) {
+            proc.kill();
+        }
+    }
+}
