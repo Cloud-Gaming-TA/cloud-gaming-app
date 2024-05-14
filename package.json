@@ -1,0 +1,25 @@
+{
+    "name": "cloud-gaming-app",
+    "version": "1.0.0",
+    "main": "main.js",
+    "devDependencies": {
+        "@types/node": "^20.12.7",
+        "electron": "^30.0.0",
+        "requirejs": "^2.3.6",
+        "webpack": "^5.91.0",
+        "webpack-cli": "^5.1.4"
+    },
+    "scripts": {
+        "start": "electron ."
+    },
+    "dependencies": {
+        "axios": "^1.6.8",
+        "electron-store": "^9.0.0",
+        "form-data": "^4.0.0",
+        "formdata": "^0.10.4",
+        "path": "^0.12.7",
+        "ps-list": "^8.1.1",
+        "url": "^0.11.3"
+    },
+    "type": "module"
+}

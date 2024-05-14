@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="loginBody">
+        <div class="login_container bodyContainer">
+            <div class="container">
+                <div class="login_logo">
+                    <img src="img/cloud-gaming.png" alt="Logo Cloud Gaming App" style="width: 600px;" class="fade_in_bottom">
+                </div>
+                <div class="error_message" id="errorMessage"></div>
+                <form class="login_form fade_in_bottom" id="loginForm">
+                    <label for="eMail"></label>
+                    <input class="login_input" type="email" id="eMail" name="email" placeholder="Email" required>
+                    <input class="login_input" type="password" id="password" name="password" placeholder="Password" required>
+                    <button class="loginBtn fade_in_bottom" type="submit">LOGIN</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="./login.js"></script>
+</body>
+
+</html>

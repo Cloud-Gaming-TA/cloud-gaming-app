@@ -1,0 +1,96 @@
+body {
+    background-color: #232323;
+    /* Set background color to black */
+    color: white;
+    /* Set text color to white */
+    font-family: 'Roboto', sans-serif; /* Change font to Roboto */
+}
+
+.centered {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.loading-container {
+    text-align: center;
+    margin-top: 160px;
+}
+
+/* Your existing CSS styles... */
+
+.loading-bars-container {
+    width: 330px;
+    /* Adjust width as needed */
+    height: 20px;
+    position: relative;
+    margin: 40px auto;
+    /* Center the loading bars */
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.loading-bar {
+    position: absolute;
+    height: 100%;
+    transition: width 0.5s ease-in-out;
+}
+
+#secondaryLoadingBar {
+    background-color: rgba(255, 255, 255, 0.3);
+    /* Semi-transparent white color for secondary loading bar */
+    width: 100%;
+}
+
+#primaryLoadingBar {
+    background-color: #0099ff;
+    /* Loading bar segment color */
+    width: 0%;
+}
+
+/* Your existing CSS styles... */
+
+
+#loadingIcon {
+    display: block;
+    margin: -30px auto;
+    /* Center the loading icon */
+    width: 300px
+}
+
+#cancelButton {
+    background-color: #ffffff;
+    color: #000000;
+    padding: 12px 20px;
+    /* Increase padding for better button size */
+    border: none;
+    border-radius: 50px;
+    /* Adjusted border radius */
+    cursor: pointer;
+    font-size: 16px;
+    /* Match font size with input */
+    transition: background-color 0.3s ease;
+    /* Smooth transition on hover */
+    font-family: 'Roboto', sans-serif; /* Change font to Roboto */
+}
+
+#cancelButton:hover {
+    background-color: #858585;
+}
+
+.fade_in_bottom {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fade-in-bottom 1s ease-in-out forwards;
+}
+
+@keyframes fade-in-bottom {
+    0% {
+        opacity: 0;
+        transform: translateY(0px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

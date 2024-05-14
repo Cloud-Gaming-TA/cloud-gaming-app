@@ -1,0 +1,100 @@
+body{
+    margin: 0;
+    padding: 0;
+}
+
+/* Login container styling */
+.login_container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    /* background-color: #232323; */
+    background-image: linear-gradient(to right bottom, #000001, #0a091a, #0e112b, #0b173d, #051c50);
+}
+
+/* Login logo styling */
+.login_logo {
+    width: auto; 
+    height: auto;
+    margin-bottom: -150px;
+    margin-top: -100px;
+}
+
+/* Login form styling */
+.login_form {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center align the form content */
+    width: 250px; /* Decrease the width of the form */
+    padding: 10px;
+    background-color: transparent; /* Set background color to transparent */
+    margin:auto;
+}
+
+/* Login input styling */
+.login_input {
+    margin-bottom: 16px; /* Slightly reduce the margin */
+    padding: 16px; /* Adjusted padding for better input area */
+    border: 1px solid #838383;
+    border-radius: 50px; /* Adjusted border radius */
+    font-size: 14px; /* Match font size with input */
+    font-weight: 600;
+    color: #c7c7c7; /* Set text color to black */
+    background-color: #232323;
+    width: 100%; /* Make the input fields fill the width of the form */
+}
+
+/* Login button styling */
+.loginBtn {
+    background-color: #232323;
+    color: #d3d3d3;
+    padding: 12px 20px; /* Increase padding for better button size */
+    border: none;
+    border-radius: 50px; /* Adjusted border radius */
+    cursor: pointer;
+    font-size: 12px; /* Match font size with input */
+    font-weight: 800;
+    transition: background-color 0.3s ease; /* Smooth transition on hover */
+}
+
+/* Login button hover styling */
+.loginBtn:hover {
+    background-color: #023b05;
+}
+
+.fade_in_bottom {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fade-in-bottom 1s ease-in-out forwards;
+}
+
+@keyframes fade-in-bottom {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Error message styling */
+.error_message {
+    display: none; /* Hide error message by default */
+    background-color: rgb(0, 0, 0);
+    color: red;
+    border: 1px solid red;
+    padding: 8px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-weight: bold;
+}
+
+
+

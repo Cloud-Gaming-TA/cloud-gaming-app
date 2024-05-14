@@ -1,0 +1,12 @@
+# Ignore node_modules directory
+node_modules/
+
+# Ignore junk directory
+junk/
+
+# Ignore specific image files
+img/cloud-gaming-old-1.png
+img/cloud-gaming-old.png
+
+# Ignore the entire auto-scripts directory
+auto-scripts/
