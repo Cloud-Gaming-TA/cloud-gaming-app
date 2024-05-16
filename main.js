@@ -41,17 +41,16 @@ app.on('ready', createWindow);
 // Function to check if moonlight.exe is running
 async function isMoonlightRunning() {
     const processes = await psList();
-    console.log("Moonlight is running!")
-    return processes.some(process => process.name === 'moonlight.exe');
+    console.log("Checking if moonlight is running")
+    return processes.some(process => process.name === 'Moonlight.exe');
 }
 
 async function checkMoonlightStatus() {
     while (true) {
         const running = await isMoonlightRunning();
+        console.log(running)
         if (running) {
             mainWindow.webContents.send('moonlight-status', true);
-            // Close the main window only if Moonlight is running
-            mainWindow.close();
             break; // Exit the loop once Moonlight is detected
         }
         await new Promise(resolve => setTimeout(resolve, 3000)); // Wait for 3 seconds before rechecking
@@ -170,10 +169,34 @@ ipcMain.on('open-moonlight', async () => {
     }
 });
 
-ipcMain.on('quit-app', () => {
-    // Remove access token and refresh token from Electron storage
+ipcMain.on('quit-app', async () => {
+    const accessToken = store.get('accessToken');
+    const sessionId = store.get('sessionId');
+
+    try {
+        if (sessionId) {
+            const response = await axios.delete(`http://10.147.20.105:3000/v1/session/${sessionId}/terminate`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            });
+
+            if (response.status === 200) {
+                console.log('Session terminated successfully');
+            } else {
+                console.warn('Failed to terminate session:', response.status, response.statusText);
+            }
+        } else {
+            console.warn('Session ID not found.');
+        }
+    } catch (error) {
+        console.error('Error terminating session:', error);
+    }
+
+    // Delete tokens from store
     store.delete('accessToken');
     store.delete('refreshToken');
+    store.delete('sessionId'); // If you also want to clear the session ID from the store
 
     // Quit the application
     app.quit();
@@ -223,7 +246,7 @@ ipcMain.on('refresh-access-token', async (event) => {
             refresh_token: refreshToken
         });
 
-        if (response.data.status === "success") {
+        if (response.status === 200) {
             const { access_token: newAccessToken, refresh_token: newRefreshToken } = response.data;
 
             store.set('accessToken', newAccessToken);
@@ -275,8 +298,35 @@ ipcMain.handle('get-username', (event) => {
     return username;
 });
 
-ipcMain.on('logout', () => {
+ipcMain.on('logout', async () => {
+    const accessToken = store.get('accessToken');
+    const sessionId = store.get('sessionId');
+
+    try {
+        if (sessionId) {
+            const response = await axios.delete(`http://10.147.20.105:3000/v1/session/${sessionId}/terminate`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            });
+
+            if (response.status === 200) {
+                console.log('Session terminated successfully');
+            } else {
+                console.warn('Failed to terminate session:', response.status, response.statusText);
+            }
+        } else {
+            console.warn('Session ID not found.');
+        }
+    } catch (error) {
+        console.error('Error terminating session:', error);
+    }
+
+    // Delete tokens from store
     store.delete('accessToken');
     store.delete('refreshToken');
-    mainWindow.loadURL(`file://${__dirname}/login.html`);
+    store.delete('sessionId'); // If you also want to clear the session ID from the store
+
+    // Load the login page
+    mainWindow.loadURL(`file://${path.join(__dirname, 'login.html')}`);
 });

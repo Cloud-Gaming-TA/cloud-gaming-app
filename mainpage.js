@@ -51,8 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add event listener to the quit app button
     document.getElementById('quitAppBtn').addEventListener('click', quitApp);
 
+    refreshAccessToken()
+
     // Refresh access token when DOM is loaded
-    refreshAccessToken();
+    setInterval(refreshAccessToken, 5 * 60 * 1000);
 
     ipcRenderer.invoke('get-username').then((username) => {
         // Update the HTML or perform any actions with the username
@@ -61,12 +63,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }).catch((error) => {
         console.error('Error retrieving username:', error);
     });
-
-    // let anims = [...document.querySelectorAll("[anim]")];
-    // console.log(anims);
-    // let click = (el, cb) => el.addEventListener("click", cb);
-    // let toggle = (el) => el.classList.toggle("toggled");
-    // let clickTog = (el) => click(el, () => toggle(el));
-    // anims.map(clickTog);
 
 });

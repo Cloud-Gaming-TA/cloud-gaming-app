@@ -42,7 +42,9 @@ function setDoneState() {
 
 // Add event listener to the cancel button when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    refreshAccessToken();
+    refreshAccessToken()
+    setInterval(refreshAccessToken, 5 * 60 * 1000);
+
     document.getElementById('cancelButton').addEventListener('click', cancelLoading);
     // Send requests for network ID and session ID when the DOM is loaded
     ipcRenderer.invoke('get-username').then(username => {
@@ -62,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Increment loading progress gradually until network ID is available
             let progress = 33;
-            const increment = 0.05; // Increment per animation frame (adjust as needed)
+            const increment = 0.2; // Increment per animation frame (adjust as needed)
             const targetProgress = 90; // Target progress when network ID is available
 
             const animateProgress = () => {

@@ -92,18 +92,21 @@ body {
 
 #logoutBtn:hover {
     background-color: #000144;
+    color: #0084ff;
     transition-delay: 0.1s;
     /* Delay the background color change */
 }
 
 #openAppBtn:hover {
     background-color: #002c06;
+    color:#00ce11;
     transition-delay: 0.1s;
     /* Delay the background color change */
 }
 
 #quitAppBtn:hover {
     background-color: #380000;
+    color:#d60000;
     transition-delay: 0.1s;
     /* Delay the background color change */
 }
