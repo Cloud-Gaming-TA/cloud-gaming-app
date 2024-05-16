@@ -43,7 +43,7 @@ function setDoneState() {
 // Add event listener to the cancel button when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     refreshAccessToken()
-    setInterval(refreshAccessToken, 5 * 60 * 1000);
+    setInterval(refreshAccessToken, 2 * 60 * 1000);
 
     document.getElementById('cancelButton').addEventListener('click', cancelLoading);
     // Send requests for network ID and session ID when the DOM is loaded
@@ -60,10 +60,10 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("session id is :", sessionId);
         if (sessionId) {
             // Set loading bar to 33% when session ID is available
-            updateLoadingBar(33);
+            updateLoadingBar(50);
 
             // Increment loading progress gradually until network ID is available
-            let progress = 33;
+            let progress = 50;
             const increment = 0.2; // Increment per animation frame (adjust as needed)
             const targetProgress = 90; // Target progress when network ID is available
 
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Add a delay before the next frame update
                     setTimeout(() => {
                         animateProgress(); // Continue animation
-                    }, 50); // Adjust the delay duration (in milliseconds) as needed
+                    }, 30); // Adjust the delay duration (in milliseconds) as needed
                 }
             };
             animateProgress(); // Start animation

@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshAccessToken()
 
     // Refresh access token when DOM is loaded
-    setInterval(refreshAccessToken, 5 * 60 * 1000);
+    setInterval(refreshAccessToken, 2 * 60 * 1000);
 
     ipcRenderer.invoke('get-username').then((username) => {
         // Update the HTML or perform any actions with the username
