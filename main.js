@@ -153,7 +153,7 @@ ipcMain.on('open-moonlight', async () => {
         // Spawn the PowerShell process
         const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
             stdio: 'inherit', // Show the terminal window
-            windowsHide: false // Ensure the terminal window is not hidden
+            windowsHide: true // Ensure the terminal window is not hidden
         });
 
         console.log("should be running the terminal now?")
@@ -172,6 +172,7 @@ ipcMain.on('open-moonlight', async () => {
 ipcMain.on('quit-app', async () => {
     const accessToken = store.get('accessToken');
     const sessionId = store.get('sessionId');
+    const networkId = store.get('networkId');
 
     try {
         if (sessionId) {
@@ -192,6 +193,17 @@ ipcMain.on('quit-app', async () => {
     } catch (error) {
         console.error('Error terminating session:', error);
     }
+
+    const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
+        const args = [
+            '-network_id', networkId
+        ];
+
+        // Spawn the PowerShell process
+        const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
+            stdio: 'inherit', // Show the terminal window
+            windowsHide: true // Ensure the terminal window is not hidden
+        });
 
     // Delete tokens from store
     store.delete('accessToken');
@@ -301,6 +313,7 @@ ipcMain.handle('get-username', (event) => {
 ipcMain.on('logout', async () => {
     const accessToken = store.get('accessToken');
     const sessionId = store.get('sessionId');
+    const networkId = store.get('networkId');
 
     try {
         if (sessionId) {
@@ -321,6 +334,17 @@ ipcMain.on('logout', async () => {
     } catch (error) {
         console.error('Error terminating session:', error);
     }
+
+    const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
+    const args = [
+        '-network_id', networkId
+    ];
+
+    // Spawn the PowerShell process
+    const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
+        stdio: 'inherit', // Show the terminal window
+        windowsHide: true // Ensure the terminal window is not hidden
+    });
 
     // Delete tokens from store
     store.delete('accessToken');

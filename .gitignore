@@ -10,3 +10,6 @@ img/cloud-gaming-old.png
 
 # Ignore the entire auto-scripts directory
 auto-scripts/
+
+# Ignore the Packaged App
+/Cloud_Gaming _App-win32-x64/
