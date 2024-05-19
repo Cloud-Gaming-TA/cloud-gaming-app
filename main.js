@@ -116,6 +116,7 @@ ipcMain.on('open-moonlight', async () => {
     try {
         console.log("now I'm going to try!");
         const username = store.get('username');
+        const accessToken = store.get('accessToken');
 
         // Get the session ID
         let sessionId;
@@ -147,7 +148,8 @@ ipcMain.on('open-moonlight', async () => {
         const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientStart.ps1');
         const args = [
             '-network_id', networkId,
-            '-session_id', sessionId
+            '-session_id', sessionId,
+            '-token', accessToken
         ];
 
         // Spawn the PowerShell process
@@ -276,9 +278,10 @@ ipcMain.on('refresh-access-token', async (event) => {
 
 ipcMain.on('cancel-loading', () => {
     // Check if moonlightProcess is defined and not null
-    if (moonlightProcess && !moonlightProcess.killed) {
+    if (moonlightProcess && !moonlightProcess.killed && !getNetworkId.killed) {
         // Kill the process if it exists and is not already killed
         moonlightProcess.kill();
+        getNetworkId.kill();
     }
     // Redirect to mainpage.html
     mainWindow.loadURL(`file://${__dirname}/mainpage.html`);
