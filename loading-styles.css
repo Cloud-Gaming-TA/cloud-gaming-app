@@ -1,8 +1,12 @@
+/* Global Styles */
+html, body { 
+    height: 100%; 
+}
+
 body {
-    background-color: #232323;
-    /* Set background color to black */
+    background: linear-gradient(to bottom, black, #02007c);
+    overflow: hidden;
     color: white;
-    /* Set text color to white */
     font-family: 'Roboto', sans-serif; /* Change font to Roboto */
 }
 
@@ -17,15 +21,12 @@ body {
     margin-top: 160px;
 }
 
-/* Your existing CSS styles... */
-
+/* Loading Bars */
 .loading-bars-container {
-    width: 330px;
-    /* Adjust width as needed */
+    width: 330px; /* Adjust width as needed */
     height: 20px;
     position: relative;
-    margin: 40px auto;
-    /* Center the loading bars */
+    margin: 40px auto; /* Center the loading bars */
     border-radius: 10px;
     overflow: hidden;
 }
@@ -37,40 +38,32 @@ body {
 }
 
 #secondaryLoadingBar {
-    background-color: rgba(255, 255, 255, 0.3);
-    /* Semi-transparent white color for secondary loading bar */
+    background-image: linear-gradient(to right left, #000000, #202020, #3b3b3b, #585858, #767676); /* Semi-transparent white color for secondary loading bar */
     width: 100%;
 }
 
 #primaryLoadingBar {
-    background-color: #0099ff;
-    /* Loading bar segment color */
+    background-image: linear-gradient(to right, #082a5c, #004d7a, #008793, #00bf72, #a8eb12);/* Loading bar segment color */
     width: 0%;
 }
 
-/* Your existing CSS styles... */
-
-
-#loadingIcon {
+/* Loading Icon */
+.loadingIconBefore {
     display: block;
-    margin: -30px auto;
-    /* Center the loading icon */
-    width: 300px
+    margin: -30px auto; /* Center the loading icon */
+    width: 300px;
 }
 
+/* Cancel Button */
 #cancelButton {
     background-color: #ffffff;
     color: #000000;
-    padding: 12px 20px;
-    /* Increase padding for better button size */
+    padding: 12px 20px; /* Increase padding for better button size */
     border: none;
-    border-radius: 50px;
-    /* Adjusted border radius */
+    border-radius: 50px; /* Adjusted border radius */
     cursor: pointer;
-    font-size: 16px;
-    /* Match font size with input */
-    transition: background-color 0.3s ease;
-    /* Smooth transition on hover */
+    font-size: 16px; /* Match font size with input */
+    transition: background-color 0.3s ease; /* Smooth transition on hover */
     font-family: 'Roboto', sans-serif; /* Change font to Roboto */
 }
 
@@ -78,6 +71,7 @@ body {
     background-color: #858585;
 }
 
+/* Fade-in Animation */
 .fade_in_bottom {
     opacity: 0;
     transform: translateY(20px);
@@ -92,5 +86,49 @@ body {
     100% {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* Ocean and Waves */
+.ocean { 
+    height: 5%;
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    background: #015871;
+}
+
+.wave {
+    background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/85486/wave.svg) repeat-x;
+    position: absolute;
+    top: -198px;
+    width: 6400px;
+    height: 198px;
+    animation: wave 7s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
+    transform: translate3d(0, 0, 0);
+}
+
+.wave:nth-of-type(2) {
+    top: -175px;
+    animation: wave 7s cubic-bezier(0.36, 0.45, 0.63, 0.53) -0.125s infinite, swell 7s ease -1.25s infinite;
+    opacity: 1;
+}
+
+@keyframes wave {
+    0% {
+        margin-left: 0;
+    }
+    100% {
+        margin-left: -1600px;
+    }
+}
+
+@keyframes swell {
+    0%, 100% {
+        transform: translate3d(0, -25px, 0);
+    }
+    50% {
+        transform: translate3d(0, 5px, 0);
     }
 }

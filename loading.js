@@ -37,6 +37,7 @@ function setDoneState() {
     loadingIcon.src = './img/done.png';
     loadingText.textContent = 'Done!';
     loadingButton.textContent = 'Go back';
+    loadingIcon.classList.remove('loadingIconBefore');
     loadingIcon.classList.add('centered');
 }
 
@@ -53,7 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Error getting username:", error);
     });
 
-    ipcRenderer.send('get-session-id');
+    // Delay before sending the request for the session ID
+    setTimeout(() => {
+        console.log("==========================\n\n\n We are trying to update the loading bar now \n\n\n ==========================")
+        ipcRenderer.send('get-session-id');
+    }, 15000); // 2 seconds delay
 
     // Receive session ID from main process
     ipcRenderer.on('session-id', (event, sessionId) => {
@@ -64,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Increment loading progress gradually until network ID is available
             let progress = 50;
-            const increment = 0.2; // Increment per animation frame (adjust as needed)
+            const increment = 0.05; // Increment per animation frame (adjust as needed)
             const targetProgress = 90; // Target progress when network ID is available
 
             const animateProgress = () => {

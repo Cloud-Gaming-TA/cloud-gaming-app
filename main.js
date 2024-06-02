@@ -58,24 +58,37 @@ async function checkMoonlightStatus() {
 }
 
 async function getSessionId(username) {
-    try {
-        const accessToken = store.get('accessToken'); // Get the access token from the store
-        const response = await axios.post('http://10.147.20.105:3000/v1/games/play', {
-            game_id: 1174180,
-            username: username
-        }, {
-            headers: {
-                Authorization: `Bearer ${accessToken}` // Include the access token in the Authorization header
+    let sessionId = ''; // Declare sessionId outside the loop
+    let response;
+
+    while (sessionId === '') {
+        try {
+            const accessToken = store.get('accessToken'); // Get the access token from the store
+            response = await axios.post('http://10.147.20.105:3000/v1/games/play', {
+                game_id: 1174180,
+                username: username
+            }, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}` // Include the access token in the Authorization header
+                }
+            });
+            sessionId = response.data.session_id; // Use the sessionId variable declared outside
+
+            store.set('sessionId', sessionId);
+            console.log("response: ", response);
+
+            if (sessionId === '') {
+                // Add a delay before retrying to prevent overwhelming the server
+                await new Promise(resolve => setTimeout(resolve, 5000)); // 5 seconds delay
             }
-        });
-        const sessionId = response.data.session_id; // Store the session ID
-        store.set('sessionId', sessionId);
-        console.log("returning session id");
-        return sessionId;
-    } catch (error) {
-        console.error('Error fetching session ID:', error);
-        throw error; // Handle the error appropriately in your application
+        } catch (error) {
+            console.error('Error fetching session ID:', error);
+            throw error; // Handle the error appropriately in your application
+        }
     }
+
+    // Once sessionId is available, return it
+    return sessionId;
 }
 
 async function getNetworkId(sessionId, event) {
@@ -211,6 +224,7 @@ ipcMain.on('quit-app', async () => {
     store.delete('accessToken');
     store.delete('refreshToken');
     store.delete('sessionId'); // If you also want to clear the session ID from the store
+    store.delete('username');
 
     // Quit the application
     app.quit();
@@ -353,6 +367,7 @@ ipcMain.on('logout', async () => {
     store.delete('accessToken');
     store.delete('refreshToken');
     store.delete('sessionId'); // If you also want to clear the session ID from the store
+    store.delete('username');
 
     // Load the login page
     mainWindow.loadURL(`file://${path.join(__dirname, 'login.html')}`);

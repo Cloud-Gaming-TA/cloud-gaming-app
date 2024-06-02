@@ -9,10 +9,15 @@
 </head>
 
 <body>
+    <div class="ocean">
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+
     <div id="loadingOverlay" class="fade_in_bottom">
         <div class="loading-container">
             <h2>Loading...</h2>
-            <img src="./img/loading.gif" alt="Loading" id="loadingIcon">
+            <img src="./img/loading.gif" alt="Loading" id="loadingIcon" class="loadingIconBefore">
             <div class="loading-bars-container">
                 <div class="loading-bar" id="secondaryLoadingBar"></div>
                 <div class="loading-bar" id="primaryLoadingBar"></div>
@@ -20,6 +25,7 @@
             <button id="cancelButton">Cancel</button>
         </div>
     </div>
+    
     <script src="./loading.js" type="module"></script>
 </body>
 
