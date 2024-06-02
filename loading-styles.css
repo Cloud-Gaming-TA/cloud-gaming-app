@@ -38,7 +38,7 @@ body {
 }
 
 #secondaryLoadingBar {
-    background-image: linear-gradient(to right left, #000000, #202020, #3b3b3b, #585858, #767676); /* Semi-transparent white color for secondary loading bar */
+    background-image: linear-gradient(to left, #000000, #202020, #3b3b3b, #585858, #767676); /* Semi-transparent white color for secondary loading bar */
     width: 100%;
 }
 

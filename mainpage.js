@@ -19,7 +19,7 @@ const openApp = () => {
     // Add a delay of 2 seconds (2000 milliseconds) before navigating
     setTimeout(() => {
         window.location.href = "./loading.html";
-    }, 2000);
+    }, 0);
 };
 
 // Function to quit the Electron app
