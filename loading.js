@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         console.log("==========================\n\n\n We are trying to update the loading bar now \n\n\n ==========================")
         ipcRenderer.send('get-session-id');
-    }, 15000); // 2 seconds delay
+    }, 5000); // 2 seconds delay
 
     // Receive session ID from main process
     ipcRenderer.on('session-id', (event, sessionId) => {
