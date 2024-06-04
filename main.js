@@ -5,12 +5,12 @@ import { spawn } from 'child_process';
 import psList from 'ps-list';
 import Store from 'electron-store';
 import axios from 'axios';
-import { setDefaultAutoSelectFamily } from 'net';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const store = new Store();
 
 let mainWindow = null;
+let changeVar = 0;
 let moonlightProcess = null;
 
 function createWindow() {
@@ -61,7 +61,7 @@ async function getSessionId(username) {
     let sessionId = ''; // Declare sessionId outside the loop
     let response;
 
-    while (sessionId === '') {
+    while (sessionId === '' && changeVar === 0) {
         try {
             const accessToken = store.get('accessToken'); // Get the access token from the store
             response = await axios.post('http://10.147.20.105:3000/v1/games/play', {
@@ -95,7 +95,7 @@ async function getNetworkId(sessionId, event) {
     let networkId = ''; // Declare networkId outside the loop
     let response;
 
-    while (networkId === '') {
+    while (networkId === '' && changeVar === 0) {
         try {
             const accessToken = store.get('accessToken');
             response = await axios.get(`http://10.147.20.105:3000/v1/session/${sessionId}/status`, {
@@ -126,6 +126,7 @@ async function getNetworkId(sessionId, event) {
 
 ipcMain.on('open-moonlight', async () => {
     console.log("success open-moonlight!");
+    changeVar = 0;
     try {
         console.log("now I'm going to try!");
         const username = store.get('username');
@@ -185,29 +186,7 @@ ipcMain.on('open-moonlight', async () => {
 });
 
 ipcMain.on('quit-app', async () => {
-    const accessToken = store.get('accessToken');
-    const sessionId = store.get('sessionId');
     const networkId = store.get('networkId');
-
-    try {
-        if (sessionId) {
-            const response = await axios.delete(`http://10.147.20.105:3000/v1/session/${sessionId}/terminate`, {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
-                }
-            });
-
-            if (response.status === 200) {
-                console.log('Session terminated successfully');
-            } else {
-                console.warn('Failed to terminate session:', response.status, response.statusText);
-            }
-        } else {
-            console.warn('Session ID not found.');
-        }
-    } catch (error) {
-        console.error('Error terminating session:', error);
-    }
 
     const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
         const args = [
@@ -266,9 +245,8 @@ ipcMain.on('login-attempt', async (event, { email, password }) => {
 
 ipcMain.on('refresh-access-token', async (event) => {
     const refreshToken = store.get('refreshToken');
+    const accessToken = store.get('accessToken');
     try {
-        const accessToken = store.get('accessToken');
-
         const response = await axios.post('http://10.147.20.105:3000/v1/auth/token/refresh', {
             access_token: accessToken,
             refresh_token: refreshToken
@@ -284,50 +262,45 @@ ipcMain.on('refresh-access-token', async (event) => {
             // Handle refresh token error
         }
     } catch (error) {
-        console.error('Error refreshing access token:', error);
+        console.error('Error refreshing access token');
         // Handle refresh token error
     }
 });
 
 
-ipcMain.on('cancel-loading', () => {
+ipcMain.on('cancel-loading', async () => {
     // Check if moonlightProcess is defined and not null
-    if (moonlightProcess && !moonlightProcess.killed && !getNetworkId.killed) {
-        // Kill the process if it exists and is not already killed
-        moonlightProcess.kill();
-        getNetworkId.kill();
+    
+    const accessToken = store.get('accessToken');
+    const sessionId = store.get('sessionId');
+
+    try {
+        if (sessionId) {
+            const response = await axios.delete(`http://10.147.20.105:3000/v1/session/${sessionId}/terminate`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            });
+
+            if (response.status === 200) {
+                console.log('Session terminated successfully');
+            } else {
+                console.warn('Failed to terminate session:', response.status, response.statusText);
+            }
+        } else {
+            console.warn('Session ID not found.');
+        }
+    } catch (error) {
+        console.error('Error terminating session:', error);
     }
+
+    changeVar = 1;
+
     // Redirect to mainpage.html
     mainWindow.loadURL(`file://${__dirname}/mainpage.html`);
 });
 
-// maybe not used
-ipcMain.on('get-network-id', (event) => {
-    const networkId = store.get('networkId');
-    if (networkId !== null && networkId !== undefined) {
-        console.log('Network ID:', networkId);
-        event.reply('network-id', networkId);
-    } else {
-        console.log('Network ID is not available yet.');
-    }
-});
-
-ipcMain.on('get-session-id', (event) => {
-    const sessionId = store.get('sessionId');
-    if (sessionId !== null && sessionId !== undefined) {
-        console.log('Session ID:', sessionId);
-        event.reply('session-id', sessionId);
-    } else {
-        console.log('Session ID is not available yet.');
-    }
-});
-
-ipcMain.handle('get-username', (event) => {
-    const username = store.get('username');
-    return username;
-});
-
-ipcMain.on('logout', async () => {
+ipcMain.on('cancel-loading', async () => {
     const accessToken = store.get('accessToken');
     const sessionId = store.get('sessionId');
     const networkId = store.get('networkId');
@@ -363,11 +336,46 @@ ipcMain.on('logout', async () => {
         windowsHide: true // Ensure the terminal window is not hidden
     });
 
+    changeVar = 1;
+
+    // Redirect to mainpage.html
+    mainWindow.loadURL(`file://${__dirname}/mainpage.html`);
+});
+
+// maybe not used
+ipcMain.on('get-network-id', (event) => {
+    const networkId = store.get('networkId');
+    if (networkId !== null && networkId !== undefined) {
+        console.log('Network ID:', networkId);
+        event.reply('network-id', networkId);
+    } else {
+        console.log('Network ID is not available yet.');
+    }
+});
+
+ipcMain.on('get-session-id', (event) => {
+    const sessionId = store.get('sessionId');
+    if (sessionId !== null && sessionId !== undefined) {
+        console.log('Session ID:', sessionId);
+        event.reply('session-id', sessionId);
+    } else {
+        console.log('Session ID is not available yet.');
+    }
+});
+
+ipcMain.handle('get-username', (event) => {
+    const username = store.get('username');
+    return username;
+});
+
+ipcMain.on('logout', async () => {
     // Delete tokens from store
     store.delete('accessToken');
     store.delete('refreshToken');
     store.delete('sessionId'); // If you also want to clear the session ID from the store
     store.delete('username');
+
+    changeVar = 1;
 
     // Load the login page
     mainWindow.loadURL(`file://${path.join(__dirname, 'login.html')}`);

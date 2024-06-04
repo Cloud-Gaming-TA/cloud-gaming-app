@@ -10,6 +10,11 @@ const cancelLoading = () => {
     ipcRenderer.send('cancel-loading');
 };
 
+const goBack = () => {
+    // Send an IPC message to the main process to cancel loading
+    ipcRenderer.send('go-back');
+};
+
 // Function to refresh access token using refresh token
 const refreshAccessToken = () => {
     // Send an IPC message to the main process to refresh access token
@@ -37,6 +42,7 @@ function setDoneState() {
     loadingIcon.src = './img/done.png';
     loadingText.textContent = 'Done!';
     loadingButton.textContent = 'Go back';
+    loadingButton.id = 'goBackButton';
     loadingIcon.classList.remove('loadingIconBefore');
     loadingIcon.classList.add('centered');
 }
@@ -47,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(refreshAccessToken, 2 * 60 * 1000);
 
     document.getElementById('cancelButton').addEventListener('click', cancelLoading);
+    document.getElementById('goBackButton').addEventListener('click', goBack);
     // Send requests for network ID and session ID when the DOM is loaded
     ipcRenderer.invoke('get-username').then(username => {
         console.log("Username is:", username);
@@ -58,36 +65,37 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         console.log("==========================\n\n\n We are trying to update the loading bar now \n\n\n ==========================")
         ipcRenderer.send('get-session-id');
-    }, 15000); // 2 seconds delay
+    }, 12000);
 
-    // Receive session ID from main process
+    updateLoadingBar(50);
+
     ipcRenderer.on('session-id', (event, sessionId) => {
         console.log("session id is :", sessionId);
-        if (sessionId) {
-            // Set loading bar to 33% when session ID is available
-            updateLoadingBar(50);
+        // Receive session ID from main process
+        setTimeout(() => {
+            if (sessionId) {
+                // Increment loading progress gradually until network ID is available
+                let progress = 50;
+                const increment = 0.05; // Increment per animation frame (adjust as needed)
+                const targetProgress = 85; // Target progress when network ID is available
 
-            // Increment loading progress gradually until network ID is available
-            let progress = 50;
-            const increment = 0.05; // Increment per animation frame (adjust as needed)
-            const targetProgress = 90; // Target progress when network ID is available
+                const animateProgress = () => {
+                    if (progress < targetProgress) {
+                        progress += increment; // Increment progress
+                        if (progress > targetProgress) progress = targetProgress; // Ensure progress does not exceed target
+                        updateLoadingBar(progress); // Update loading bar
 
-            const animateProgress = () => {
-                if (progress < targetProgress) {
-                    progress += increment; // Increment progress
-                    if (progress > targetProgress) progress = targetProgress; // Ensure progress does not exceed target
-                    updateLoadingBar(progress); // Update loading bar
+                        // Add a delay before the next frame update
+                        setTimeout(() => {
+                            animateProgress(); // Continue animation
+                        }, 30); // Adjust the delay duration (in milliseconds) as needed
+                    }
+                };
+                animateProgress(); // Start animation
 
-                    // Add a delay before the next frame update
-                    setTimeout(() => {
-                        animateProgress(); // Continue animation
-                    }, 30); // Adjust the delay duration (in milliseconds) as needed
-                }
-            };
-            animateProgress(); // Start animation
-
-            // Execute code related to session ID here if needed
-        }
+                // Execute code related to session ID here if needed
+            }
+        }, 5000)
     });
 
     // Receive network ID from main process
