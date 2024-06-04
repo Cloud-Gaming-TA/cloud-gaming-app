@@ -37,44 +37,49 @@ function createWindow() {
         const sessionId = store.get('sessionId');
         const networkId = store.get('networkId');
 
-        try {
-            if (sessionId) {
-                const response = await axios.delete(`http://10.147.20.105:3000/v1/session/${sessionId}/terminate`, {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`
+        if (accessToken) {
+            try {
+                if (sessionId) {
+                    const response = await axios.delete(`http://10.147.20.105:3000/v1/session/${sessionId}/terminate`, {
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`
+                        }
+                    });
+
+                    if (response.status === 200) {
+                        console.log('Session terminated successfully');
+                    } else {
+                        console.warn('Failed to terminate session:', response.status, response.statusText);
                     }
-                });
-
-                if (response.status === 200) {
-                    console.log('Session terminated successfully');
                 } else {
-                    console.warn('Failed to terminate session:', response.status, response.statusText);
+                    console.warn('Session ID not found.');
                 }
-            } else {
-                console.warn('Session ID not found.');
+            } catch (error) {
+                console.error('Error terminating session:', error);
             }
-        } catch (error) {
-            console.error('Error terminating session:', error);
+
+            try {
+                if (networkId) {
+                    const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
+                    const args = [
+                        '-network_id', networkId
+                    ];
+                    // Spawn the PowerShell process
+                    const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
+                        stdio: 'inherit', // Show the terminal window
+                        windowsHide: true // Ensure the terminal window is not hidden
+                    });
+                } else {
+                    console.warn('Network ID not found');
+                };
+            } catch (error) {
+                console.error('Error deleting network:', error);
+            }
+
+        } else {
+            console.log('No access token found');
         }
 
-        try {
-            if (networkId) {
-                const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
-                const args = [
-                    '-network_id', networkId
-                ];
-                // Spawn the PowerShell process
-                const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
-                    stdio: 'inherit', // Show the terminal window
-                    windowsHide: true // Ensure the terminal window is not hidden
-                });
-            } else {
-                console.warn('Network ID not found');
-            };
-        } catch (error) {
-            console.error('Error deleting network:', error);
-        }
-        
         console.log('Closed, Goodbye 2!');
         mainWindow = null;
     });
