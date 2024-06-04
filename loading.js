@@ -10,11 +10,6 @@ const cancelLoading = () => {
     ipcRenderer.send('cancel-loading');
 };
 
-const goBack = () => {
-    // Send an IPC message to the main process to cancel loading
-    ipcRenderer.send('go-back');
-};
-
 // Function to refresh access token using refresh token
 const refreshAccessToken = () => {
     // Send an IPC message to the main process to refresh access token
@@ -42,7 +37,6 @@ function setDoneState() {
     loadingIcon.src = './img/done.png';
     loadingText.textContent = 'Done!';
     loadingButton.textContent = 'Go back';
-    loadingButton.id = 'goBackButton';
     loadingIcon.classList.remove('loadingIconBefore');
     loadingIcon.classList.add('centered');
 }
@@ -53,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(refreshAccessToken, 2 * 60 * 1000);
 
     document.getElementById('cancelButton').addEventListener('click', cancelLoading);
-    document.getElementById('goBackButton').addEventListener('click', goBack);
+    
     // Send requests for network ID and session ID when the DOM is loaded
     ipcRenderer.invoke('get-username').then(username => {
         console.log("Username is:", username);
@@ -67,8 +61,10 @@ document.addEventListener('DOMContentLoaded', () => {
         ipcRenderer.send('get-session-id');
     }, 12000);
 
-    updateLoadingBar(50);
-
+    setTimeout(()=> {
+        updateLoadingBar(50);
+    }, 1000);
+    
     ipcRenderer.on('session-id', (event, sessionId) => {
         console.log("session id is :", sessionId);
         // Receive session ID from main process
@@ -95,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Execute code related to session ID here if needed
             }
-        }, 5000)
+        }, 3000)
     });
 
     // Receive network ID from main process

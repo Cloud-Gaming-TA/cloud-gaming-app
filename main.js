@@ -31,7 +31,51 @@ function createWindow() {
 
     mainWindow.webContents.openDevTools();
 
-    mainWindow.on('closed', () => {
+    mainWindow.on('closed', async () => {
+        console.log('Closed, Goodbye 1!');
+        const accessToken = store.get('accessToken');
+        const sessionId = store.get('sessionId');
+        const networkId = store.get('networkId');
+
+        try {
+            if (sessionId) {
+                const response = await axios.delete(`http://10.147.20.105:3000/v1/session/${sessionId}/terminate`, {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    }
+                });
+
+                if (response.status === 200) {
+                    console.log('Session terminated successfully');
+                } else {
+                    console.warn('Failed to terminate session:', response.status, response.statusText);
+                }
+            } else {
+                console.warn('Session ID not found.');
+            }
+        } catch (error) {
+            console.error('Error terminating session:', error);
+        }
+
+        try {
+            if (networkId) {
+                const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
+                const args = [
+                    '-network_id', networkId
+                ];
+                // Spawn the PowerShell process
+                const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
+                    stdio: 'inherit', // Show the terminal window
+                    windowsHide: true // Ensure the terminal window is not hidden
+                });
+            } else {
+                console.warn('Network ID not found');
+            };
+        } catch (error) {
+            console.error('Error deleting network:', error);
+        }
+        
+        console.log('Closed, Goodbye 2!');
         mainWindow = null;
     });
 }
@@ -46,7 +90,7 @@ async function isMoonlightRunning() {
 }
 
 async function checkMoonlightStatus() {
-    while (true) {
+    while (true && changeVar === 0) {
         const running = await isMoonlightRunning();
         console.log(running)
         if (running) {
@@ -153,33 +197,34 @@ ipcMain.on('open-moonlight', async () => {
             return { sessionId: sessionId, networkId: null };
         }
 
-        console.log(sessionId);
-        console.log(networkId);
+        if (sessionId && networkId) {
+            // Send the network ID to the renderer process
+            mainWindow.webContents.send('network-id', networkId);
 
-        // Send the network ID to the renderer process
-        mainWindow.webContents.send('network-id', networkId);
+            const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientStart.ps1');
+            const args = [
+                '-network_id', networkId,
+                '-session_id', sessionId,
+                '-token', accessToken
+            ];
 
-        const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientStart.ps1');
-        const args = [
-            '-network_id', networkId,
-            '-session_id', sessionId,
-            '-token', accessToken
-        ];
+            // Spawn the PowerShell process
+            const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
+                stdio: 'inherit', // Show the terminal window
+                windowsHide: true // Ensure the terminal window is not hidden
+            });
 
-        // Spawn the PowerShell process
-        const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
-            stdio: 'inherit', // Show the terminal window
-            windowsHide: true // Ensure the terminal window is not hidden
-        });
+            console.log("should be running the terminal now?")
 
-        console.log("should be running the terminal now?")
-        
-        // Check if Moonlight is running mid-process
-        const running = await isMoonlightRunning();
-        mainWindow.webContents.send('moonlight-status', running);
+            // Check if Moonlight is running mid-process
+            const running = await isMoonlightRunning();
+            mainWindow.webContents.send('moonlight-status', running);
 
-        checkMoonlightStatus()
-
+            checkMoonlightStatus()
+        }
+        else {
+            console.log("Cannot continue process :(");
+        }
     } catch (error) {
         console.error('Error:', error);
     }
@@ -189,15 +234,15 @@ ipcMain.on('quit-app', async () => {
     const networkId = store.get('networkId');
 
     const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
-        const args = [
-            '-network_id', networkId
-        ];
+    const args = [
+        '-network_id', networkId
+    ];
 
-        // Spawn the PowerShell process
-        const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
-            stdio: 'inherit', // Show the terminal window
-            windowsHide: true // Ensure the terminal window is not hidden
-        });
+    // Spawn the PowerShell process
+    const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
+        stdio: 'inherit', // Show the terminal window
+        windowsHide: true // Ensure the terminal window is not hidden
+    });
 
     // Delete tokens from store
     store.delete('accessToken');
@@ -267,39 +312,6 @@ ipcMain.on('refresh-access-token', async (event) => {
     }
 });
 
-
-ipcMain.on('cancel-loading', async () => {
-    // Check if moonlightProcess is defined and not null
-    
-    const accessToken = store.get('accessToken');
-    const sessionId = store.get('sessionId');
-
-    try {
-        if (sessionId) {
-            const response = await axios.delete(`http://10.147.20.105:3000/v1/session/${sessionId}/terminate`, {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
-                }
-            });
-
-            if (response.status === 200) {
-                console.log('Session terminated successfully');
-            } else {
-                console.warn('Failed to terminate session:', response.status, response.statusText);
-            }
-        } else {
-            console.warn('Session ID not found.');
-        }
-    } catch (error) {
-        console.error('Error terminating session:', error);
-    }
-
-    changeVar = 1;
-
-    // Redirect to mainpage.html
-    mainWindow.loadURL(`file://${__dirname}/mainpage.html`);
-});
-
 ipcMain.on('cancel-loading', async () => {
     const accessToken = store.get('accessToken');
     const sessionId = store.get('sessionId');
@@ -315,6 +327,7 @@ ipcMain.on('cancel-loading', async () => {
 
             if (response.status === 200) {
                 console.log('Session terminated successfully');
+                // store.delete('sessionId');
             } else {
                 console.warn('Failed to terminate session:', response.status, response.statusText);
             }
@@ -325,16 +338,23 @@ ipcMain.on('cancel-loading', async () => {
         console.error('Error terminating session:', error);
     }
 
-    const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
-    const args = [
-        '-network_id', networkId
-    ];
-
-    // Spawn the PowerShell process
-    const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
-        stdio: 'inherit', // Show the terminal window
-        windowsHide: true // Ensure the terminal window is not hidden
-    });
+    try {
+        if (networkId) {
+            const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
+            const args = [
+                '-network_id', networkId
+            ];
+            // Spawn the PowerShell process
+            const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
+                stdio: 'inherit', // Show the terminal window
+                windowsHide: true // Ensure the terminal window is not hidden
+            });
+        } else {
+            console.warn('Network ID not found');
+        };
+    } catch (error) {
+        console.error('Error deleting network:', error);
+    }
 
     changeVar = 1;
 
