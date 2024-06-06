@@ -1,4 +1,5 @@
 let ipcRenderer;
+
 if (window && window.process && window.process.type === 'renderer') {
     ipcRenderer = require('electron').ipcRenderer;
     console.log('ipcRenderer:', ipcRenderer); // Check ipcRenderer value
@@ -12,14 +13,25 @@ ipcRenderer.on('open-moonlight', () => {
 // Function to open the Moonlight app
 const openApp = () => {
     console.log("Attempting to open Moonlight app");
-    // Navigate to the loading page after a delay
-    ipcRenderer.send('open-moonlight');
     console.log("Button pressed");
 
-    // Add a delay of 2 seconds (2000 milliseconds) before navigating
+    ipcRenderer.send('open-moonlight');
+
     setTimeout(() => {
-        window.location.href = "./loading.html";
-    }, 0);
+        ipcRenderer.invoke('get-session-id-status-code').then(sesIdStatCode => {
+            setTimeout(() => {
+                if (sesIdStatCode === 404) {
+                    window.location.href = "./queue.html";
+                    console.log("Yay!")
+                } else {
+                    window.location.href = "./loading.html";
+                    console.log("no error i guess?");
+                }
+            }, 1000); // Add a delay of 500 milliseconds before navigating
+        }).catch(error => {
+            console.error("Error getting status code!", error); // Log the error message
+        });
+    }, 0); // Initial delay of 2 seconds before invoking the IPC method
 };
 
 // Function to quit the Electron app
@@ -51,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add event listener to the quit app button
     document.getElementById('quitAppBtn').addEventListener('click', quitApp);
 
-    refreshAccessToken()
+    refreshAccessToken();
 
     // Refresh access token when DOM is loaded
     setInterval(refreshAccessToken, 2 * 60 * 1000);

@@ -17,7 +17,9 @@
     <div id="loadingOverlay" class="fade_in_bottom">
         <div class="loading-container">
             <h2>Loading...</h2>
-            <img src="./img/loading.gif" alt="Loading" id="loadingIcon" class="loadingIconBefore">
+            <div id="realLoadingIcon" class="loader">
+                <img src="./img/loading.gif" alt="Loading" id="loadingIcon" class="loadingIconBefore">
+            </div>
             <div class="loading-bars-container">
                 <div class="loading-bar" id="secondaryLoadingBar"></div>
                 <div class="loading-bar" id="primaryLoadingBar"></div>
@@ -25,7 +27,8 @@
             <button id="cancelButton">Cancel</button>
         </div>
     </div>
-    
+
+    <audio id="loadingAudio" src="./audio/loading-audio.mp3" loop></audio>
     <script src="./loading.js" type="module"></script>
 </body>
 

@@ -9,8 +9,16 @@ import axios from 'axios';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const store = new Store();
 
+function clearStoreData() {
+    store.clear();
+    console.log('Electron store data cleared');
+}
+
+clearStoreData();
+
 let mainWindow = null;
 let changeVar = 0;
+let changeVarRefresh = 0;
 let moonlightProcess = null;
 
 function createWindow() {
@@ -24,9 +32,9 @@ function createWindow() {
         },
         modal: true,
         parent: null,
+        autoHideMenuBar: true,
     });
 
-    // Then you can use __dirname in the same way as before
     mainWindow.loadURL(`file://${__dirname}/login.html`);
 
     mainWindow.webContents.openDevTools();
@@ -37,47 +45,34 @@ function createWindow() {
         const sessionId = store.get('sessionId');
         const networkId = store.get('networkId');
 
-        if (accessToken) {
-            try {
-                if (sessionId) {
-                    const response = await axios.delete(`http://10.147.20.105:3000/v1/session/${sessionId}/terminate`, {
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`
-                        }
-                    });
-
-                    if (response.status === 200) {
-                        console.log('Session terminated successfully');
-                    } else {
-                        console.warn('Failed to terminate session:', response.status, response.statusText);
+        try {
+            if (sessionId) {
+                const response = await axios.delete(`http://10.11.1.181:3000/v1/session/${sessionId}/terminate`, {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
                     }
-                } else {
-                    console.warn('Session ID not found.');
-                }
-            } catch (error) {
-                console.error('Error terminating session:', error);
+                });
+                console.log('Session terminated successfully');
+            } else {
+                console.warn('Session ID not found.');
             }
+        } catch (error) {
+            console.error('Error terminating session:', error.response.data);
+        }
 
-            try {
-                if (networkId) {
-                    const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
-                    const args = [
-                        '-network_id', networkId
-                    ];
-                    // Spawn the PowerShell process
-                    const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
-                        stdio: 'inherit', // Show the terminal window
-                        windowsHide: true // Ensure the terminal window is not hidden
-                    });
-                } else {
-                    console.warn('Network ID not found');
-                };
-            } catch (error) {
-                console.error('Error deleting network:', error);
+        try {
+            if (networkId) {
+                const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
+                const args = ['-network_id', networkId];
+                const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
+                    stdio: 'inherit',
+                    windowsHide: true
+                });
+            } else {
+                console.warn('Network ID not found');
             }
-
-        } else {
-            console.log('No access token found');
+        } catch (error) {
+            console.error('Error deleting network:', error.response.data);
         }
 
         console.log('Closed, Goodbye 2!');
@@ -87,123 +82,108 @@ function createWindow() {
 
 app.on('ready', createWindow);
 
-// Function to check if moonlight.exe is running
 async function isMoonlightRunning() {
     const processes = await psList();
-    console.log("Checking if moonlight is running")
+    console.log("Checking if moonlight is running");
     return processes.some(process => process.name === 'Moonlight.exe');
 }
 
 async function checkMoonlightStatus() {
     while (true && changeVar === 0) {
         const running = await isMoonlightRunning();
-        console.log(running)
+        console.log(running);
         if (running) {
             mainWindow.webContents.send('moonlight-status', true);
-            break; // Exit the loop once Moonlight is detected
+            break;
         }
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Wait for 3 seconds before rechecking
+        await new Promise(resolve => setTimeout(resolve, 3000));
     }
 }
 
 async function getSessionId(username) {
-    let sessionId = ''; // Declare sessionId outside the loop
+    let sessionId = '';
     let response;
 
-    while (sessionId === '' && changeVar === 0) {
+    changeVar = 0;
+
+    while (changeVar === 0) {
+        const accessToken = store.get('accessToken');
         try {
-            const accessToken = store.get('accessToken'); // Get the access token from the store
-            response = await axios.post('http://10.147.20.105:3000/v1/games/play', {
+            response = await axios.post('http://10.11.1.181:3000/v1/games/play', {
                 game_id: 1174180,
                 username: username
             }, {
                 headers: {
-                    Authorization: `Bearer ${accessToken}` // Include the access token in the Authorization header
+                    Authorization: `Bearer ${accessToken}`
                 }
             });
-            sessionId = response.data.session_id; // Use the sessionId variable declared outside
+            sessionId = response.data.session_id;
+            sessionIdStatusCode = response.status;
 
             store.set('sessionId', sessionId);
-            console.log("response: ", response);
+            store.set('sessionIdStatusCode', sessionIdStatusCode);
+            
+            console.log('Graphics card:', response.data.gpu_name);
 
-            if (sessionId === '') {
-                // Add a delay before retrying to prevent overwhelming the server
-                await new Promise(resolve => setTimeout(resolve, 5000)); // 5 seconds delay
-            }
+            changeVar = 1;
+
         } catch (error) {
-            console.error('Error fetching session ID:', error);
-            throw error; // Handle the error appropriately in your application
-        }
-    }
-
-    // Once sessionId is available, return it
+            console.error(error.response.data.message);
+            errorStatusCode = error.response.status;
+            store.set('sessionIdStatusCode', errorStatusCode);
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        };
+    };
     return sessionId;
 }
 
-async function getNetworkId(sessionId, event) {
-    let networkId = ''; // Declare networkId outside the loop
+async function getNetworkId(sessionId) {
+    let networkId = '';
     let response;
+    changeVar = 0;
 
     while (networkId === '' && changeVar === 0) {
         try {
             const accessToken = store.get('accessToken');
-            response = await axios.get(`http://10.147.20.105:3000/v1/session/${sessionId}/status`, {
+            response = await axios.get(`http://10.11.1.181:3000/v1/session/${sessionId}/status`, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`
                 }
             });
 
-            networkId = response.data.network_id; // Use the networkId variable declared outside
+            networkId = response.data.network_id;
 
-            store.set('network', networkId);
-            console.log("response: ", response);
+            store.set('networkId', networkId);
+            console.log("response: ", response.status);
+            console.log("Network ID is:", networkId);
 
             if (networkId === '') {
-                // Add a delay before retrying to prevent overwhelming the server
-                await new Promise(resolve => setTimeout(resolve, 5000)); // 5 seconds delay
+                await new Promise(resolve => setTimeout(resolve, 5000));
             }
         } catch (error) {
-            console.error('Error fetching network ID:', error);
-            throw error; // Handle the error appropriately in your application
+            console.error('Error fetching network ID!', error);
         }
     }
-
-    // Once networkId is available, return it
+    changeVar = 1;
     return networkId;
 }
 
-
 ipcMain.on('open-moonlight', async () => {
     console.log("success open-moonlight!");
-    changeVar = 0;
     try {
         console.log("now I'm going to try!");
         const username = store.get('username');
         const accessToken = store.get('accessToken');
 
-        // Get the session ID
         let sessionId;
-        try {
-            sessionId = await getSessionId(username);
-            console.log("session id is :", sessionId);
-        } catch (error) {
-            console.error('Error getting session ID:', error);
-            // Handle the error appropriately
-            return { sessionId: null, networkId: null };
-        }
+        sessionId = await getSessionId(username);
+        console.log("session id is :", sessionId);
 
         let networkId;
-        try {
-            networkId = await getNetworkId(sessionId);
-            console.log("network id is :", networkId);
-        } catch (error) {
-            console.error('Error getting network ID:', error);
-            // Handle the error appropriately
-            return { sessionId: sessionId, networkId: null };
-        }
+        networkId = await getNetworkId(sessionId);
+        console.log("network id is :", networkId);
 
         if (sessionId && networkId) {
-            // Send the network ID to the renderer process
             mainWindow.webContents.send('network-id', networkId);
 
             const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientStart.ps1');
@@ -213,21 +193,18 @@ ipcMain.on('open-moonlight', async () => {
                 '-token', accessToken
             ];
 
-            // Spawn the PowerShell process
             const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
-                stdio: 'inherit', // Show the terminal window
-                windowsHide: true // Ensure the terminal window is not hidden
+                stdio: 'inherit',
+                windowsHide: true
             });
 
-            console.log("should be running the terminal now?")
+            console.log("should be running the terminal now?");
 
-            // Check if Moonlight is running mid-process
             const running = await isMoonlightRunning();
             mainWindow.webContents.send('moonlight-status', running);
 
-            checkMoonlightStatus()
-        }
-        else {
+            checkMoonlightStatus();
+        } else {
             console.log("Cannot continue process :(");
         }
     } catch (error) {
@@ -239,29 +216,24 @@ ipcMain.on('quit-app', async () => {
     const networkId = store.get('networkId');
 
     const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
-    const args = [
-        '-network_id', networkId
-    ];
+    const args = ['-network_id', networkId];
 
-    // Spawn the PowerShell process
     const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
-        stdio: 'inherit', // Show the terminal window
-        windowsHide: true // Ensure the terminal window is not hidden
+        stdio: 'inherit',
+        windowsHide: true
     });
 
-    // Delete tokens from store
     store.delete('accessToken');
     store.delete('refreshToken');
-    store.delete('sessionId'); // If you also want to clear the session ID from the store
+    store.delete('sessionId');
     store.delete('username');
 
-    // Quit the application
     app.quit();
 });
 
 ipcMain.on('login-attempt', async (event, { email, password }) => {
     try {
-        const response = await axios.post('http://10.147.20.105:3000/v1/account/login', {
+        const response = await axios.post('http://10.11.1.181:3000/v1/account/login', {
             email,
             password,
         });
@@ -273,7 +245,6 @@ ipcMain.on('login-attempt', async (event, { email, password }) => {
             store.set('accessToken', accessToken);
             store.set('refreshToken', refreshToken);
 
-            // Reply with success and username
             event.reply('login-response', { success: true });
         }
     } catch (error) {
@@ -297,22 +268,18 @@ ipcMain.on('refresh-access-token', async (event) => {
     const refreshToken = store.get('refreshToken');
     const accessToken = store.get('accessToken');
     try {
-        const response = await axios.post('http://10.147.20.105:3000/v1/auth/token/refresh', {
+        const response = await axios.post('http://10.11.1.181:3000/v1/auth/token/refresh', {
             access_token: accessToken,
             refresh_token: refreshToken
         });
 
-        if (response.status === 200) {
-            const { access_token: newAccessToken, refresh_token: newRefreshToken } = response.data;
+        const { access_token: newAccessToken, refresh_token: newRefreshToken } = response.data;
 
-            store.set('accessToken', newAccessToken);
-            store.set('refreshToken', newRefreshToken);
-        } else {
-            console.warn('Failed to refresh access token');
-            // Handle refresh token error
-        }
+        store.set('accessToken', newAccessToken);
+        store.set('refreshToken', newRefreshToken);
+        console.log('Access Token has been refreshed.')
     } catch (error) {
-        console.error('Error refreshing access token');
+        console.error('Error refreshing access token,', error.response.data.message);
         // Handle refresh token error
     }
 });
@@ -324,7 +291,7 @@ ipcMain.on('cancel-loading', async () => {
 
     try {
         if (sessionId) {
-            const response = await axios.delete(`http://10.147.20.105:3000/v1/session/${sessionId}/terminate`, {
+            const response = await axios.delete(`http://10.11.1.181:3000/v1/session/${sessionId}/terminate`, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`
                 }
@@ -363,7 +330,14 @@ ipcMain.on('cancel-loading', async () => {
 
     changeVar = 1;
 
+    store.delete('sessionId');
+    store.delete('networkId');
+
     // Redirect to mainpage.html
+    mainWindow.loadURL(`file://${__dirname}/mainpage.html`);
+});
+
+ipcMain.on('cancel-loading-queue', async () => {
     mainWindow.loadURL(`file://${__dirname}/mainpage.html`);
 });
 
@@ -405,3 +379,8 @@ ipcMain.on('logout', async () => {
     // Load the login page
     mainWindow.loadURL(`file://${path.join(__dirname, 'login.html')}`);
 });
+
+ipcMain.handle('get-session-id-status-code', (event) => {
+    const sesIdStatCode1 = store.get('sessionIdStatusCode');
+    return sesIdStatCode1;
+})

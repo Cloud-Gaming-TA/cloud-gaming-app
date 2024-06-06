@@ -3,7 +3,6 @@ if (window && window.process && window.process.type === 'renderer') {
     ipcRenderer = require('electron').ipcRenderer;
 }
 
-
 // Function to handle cancel button click
 const cancelLoading = () => {
     // Send an IPC message to the main process to cancel loading
@@ -34,20 +33,31 @@ function setDoneState() {
     const loadingIcon = document.getElementById('loadingIcon');
     const loadingText = document.querySelector('.loading-container h2');
     const loadingButton = document.getElementById('cancelButton');
+    const loadingDiv = document.getElementById('realLoadingIcon');
     loadingIcon.src = './img/done.png';
     loadingText.textContent = 'Done!';
     loadingButton.textContent = 'Go back';
     loadingIcon.classList.remove('loadingIconBefore');
     loadingIcon.classList.add('centered');
+    loadingDiv.classList.remove('loader');
+
+    // Stop the loading audio when done
+    const loadingAudio = document.getElementById('loadingAudio');
+    loadingAudio.pause();
+    loadingAudio.currentTime = 0;
 }
 
 // Add event listener to the cancel button when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    refreshAccessToken()
+    // Play the loading audio
+    const loadingAudio = document.getElementById('loadingAudio');
+    loadingAudio.play();
+
+    refreshAccessToken();
     setInterval(refreshAccessToken, 2 * 60 * 1000);
 
     document.getElementById('cancelButton').addEventListener('click', cancelLoading);
-    
+
     // Send requests for network ID and session ID when the DOM is loaded
     ipcRenderer.invoke('get-username').then(username => {
         console.log("Username is:", username);
@@ -57,14 +67,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Delay before sending the request for the session ID
     setTimeout(() => {
-        console.log("==========================\n\n\n We are trying to update the loading bar now \n\n\n ==========================")
+        console.log("==========================\n\n\n We are trying to update the loading bar now \n\n\n ==========================");
         ipcRenderer.send('get-session-id');
-    }, 12000);
+    }, 9000);
 
-    setTimeout(()=> {
-        updateLoadingBar(50);
+    setTimeout(() => {
+        updateLoadingBar(25);
     }, 1000);
     
+    setTimeout(() => {
+        updateLoadingBar(50);
+    }, 4000);
+
     ipcRenderer.on('session-id', (event, sessionId) => {
         console.log("session id is :", sessionId);
         // Receive session ID from main process
@@ -91,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Execute code related to session ID here if needed
             }
-        }, 3000)
+        }, 1000);
     });
 
     // Receive network ID from main process
