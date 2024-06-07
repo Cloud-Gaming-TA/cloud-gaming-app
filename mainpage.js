@@ -27,11 +27,11 @@ const openApp = () => {
                     window.location.href = "./loading.html";
                     console.log("no error i guess?");
                 }
-            }, 1000); // Add a delay of 500 milliseconds before navigating
+            }, 0); // Add a delay of 500 milliseconds before navigating
         }).catch(error => {
             console.error("Error getting status code!", error); // Log the error message
         });
-    }, 0); // Initial delay of 2 seconds before invoking the IPC method
+    }, 3000); // Initial delay of 2 seconds before invoking the IPC method
 };
 
 // Function to quit the Electron app

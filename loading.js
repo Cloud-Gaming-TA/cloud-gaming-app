@@ -33,13 +33,13 @@ function setDoneState() {
     const loadingIcon = document.getElementById('loadingIcon');
     const loadingText = document.querySelector('.loading-container h2');
     const loadingButton = document.getElementById('cancelButton');
-    const loadingDiv = document.getElementById('realLoadingIcon');
+    // const loadingDiv = document.getElementById('realLoadingIcon');
     loadingIcon.src = './img/done.png';
     loadingText.textContent = 'Done!';
     loadingButton.textContent = 'Go back';
     loadingIcon.classList.remove('loadingIconBefore');
-    loadingIcon.classList.add('centered');
-    loadingDiv.classList.remove('loader');
+    loadingIcon.classList.add('loadingIconAfter');
+    // loadingDiv.classList.remove('loader');
 
     // Stop the loading audio when done
     const loadingAudio = document.getElementById('loadingAudio');
@@ -47,18 +47,17 @@ function setDoneState() {
     loadingAudio.currentTime = 0;
 }
 
-// Add event listener to the cancel button when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Play the loading audio
     const loadingAudio = document.getElementById('loadingAudio');
     loadingAudio.play();
+    loadingAudio.volume = 0.3;
 
     refreshAccessToken();
     setInterval(refreshAccessToken, 2 * 60 * 1000);
 
     document.getElementById('cancelButton').addEventListener('click', cancelLoading);
 
-    // Send requests for network ID and session ID when the DOM is loaded
     ipcRenderer.invoke('get-username').then(username => {
         console.log("Username is:", username);
     }).catch(error => {
@@ -68,45 +67,56 @@ document.addEventListener('DOMContentLoaded', () => {
     // Delay before sending the request for the session ID
     setTimeout(() => {
         console.log("==========================\n\n\n We are trying to update the loading bar now \n\n\n ==========================");
-        ipcRenderer.send('get-session-id');
-    }, 9000);
+        startSessionIdCheck();
+    }, 10000);
 
     setTimeout(() => {
         updateLoadingBar(25);
     }, 1000);
-    
+
     setTimeout(() => {
         updateLoadingBar(50);
     }, 4000);
 
-    ipcRenderer.on('session-id', (event, sessionId) => {
-        console.log("session id is :", sessionId);
-        // Receive session ID from main process
-        setTimeout(() => {
+    // Function to check session ID at intervals
+    function startSessionIdCheck() {
+        const sessionIdCheckInterval = setInterval(() => {
+            ipcRenderer.send('get-session-id');
+        }, 3000); // Check every 3 seconds
+
+        ipcRenderer.on('session-id', (event, sessionId) => {
+            console.log("session id is :", sessionId);
             if (sessionId) {
-                // Increment loading progress gradually until network ID is available
-                let progress = 50;
-                const increment = 0.05; // Increment per animation frame (adjust as needed)
-                const targetProgress = 85; // Target progress when network ID is available
-
-                const animateProgress = () => {
-                    if (progress < targetProgress) {
-                        progress += increment; // Increment progress
-                        if (progress > targetProgress) progress = targetProgress; // Ensure progress does not exceed target
-                        updateLoadingBar(progress); // Update loading bar
-
-                        // Add a delay before the next frame update
-                        setTimeout(() => {
-                            animateProgress(); // Continue animation
-                        }, 30); // Adjust the delay duration (in milliseconds) as needed
-                    }
-                };
-                animateProgress(); // Start animation
-
-                // Execute code related to session ID here if needed
+                clearInterval(sessionIdCheckInterval); // Stop checking once we get the session ID
+                // Proceed with other functions
+                onSessionIdReceived(sessionId);
             }
-        }, 1000);
-    });
+        });
+    }
+
+    // Function to execute when session ID is received
+    function onSessionIdReceived(sessionId) {
+        // Increment loading progress gradually until network ID is available
+        let progress = 50;
+        const increment = 0.05; // Increment per animation frame (adjust as needed)
+        const targetProgress = 85; // Target progress when network ID is available
+
+        const animateProgress = () => {
+            if (progress < targetProgress) {
+                progress += increment; // Increment progress
+                if (progress > targetProgress) progress = targetProgress; // Ensure progress does not exceed target
+                updateLoadingBar(progress); // Update loading bar
+
+                // Add a delay before the next frame update
+                setTimeout(() => {
+                    animateProgress(); // Continue animation
+                }, 30); // Adjust the delay duration (in milliseconds) as needed
+            }
+        };
+        animateProgress(); // Start animation
+
+        // Execute code related to session ID here if needed
+    }
 
     // Receive network ID from main process
     ipcRenderer.on('network-id', (event, networkId) => {
@@ -116,3 +126,4 @@ document.addEventListener('DOMContentLoaded', () => {
         setDoneState();
     });
 });
+

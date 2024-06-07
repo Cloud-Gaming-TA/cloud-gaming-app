@@ -103,6 +103,8 @@ async function checkMoonlightStatus() {
 async function getSessionId(username) {
     let sessionId = '';
     let response;
+    let errorStatusCode = 0;
+    let sessionIdStatusCode = 0;
 
     changeVar = 0;
 
@@ -130,6 +132,7 @@ async function getSessionId(username) {
         } catch (error) {
             console.error(error.response.data.message);
             errorStatusCode = error.response.status;
+            console.error("in getSessionId,", errorStatusCode);
             store.set('sessionIdStatusCode', errorStatusCode);
             await new Promise(resolve => setTimeout(resolve, 5000));
         };
@@ -154,8 +157,6 @@ async function getNetworkId(sessionId) {
             networkId = response.data.network_id;
 
             store.set('networkId', networkId);
-            console.log("response: ", response.status);
-            console.log("Network ID is:", networkId);
 
             if (networkId === '') {
                 await new Promise(resolve => setTimeout(resolve, 5000));
@@ -198,7 +199,7 @@ ipcMain.on('open-moonlight', async () => {
                 windowsHide: true
             });
 
-            console.log("should be running the terminal now?");
+            console.log("should be running the terminal now...");
 
             const running = await isMoonlightRunning();
             mainWindow.webContents.send('moonlight-status', running);
@@ -381,6 +382,7 @@ ipcMain.on('logout', async () => {
 });
 
 ipcMain.handle('get-session-id-status-code', (event) => {
-    const sesIdStatCode1 = store.get('sessionIdStatusCode');
-    return sesIdStatCode1;
+    const sesIdStatCode = store.get('sessionIdStatusCode');
+    console.log("Stat code is:", sesIdStatCode);
+    return sesIdStatCode;
 })

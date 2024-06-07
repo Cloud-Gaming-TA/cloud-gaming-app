@@ -55,6 +55,13 @@ body {
     border-radius: 100%;
 }
 
+.loadingIconAfter {
+    display: block;
+    margin: auto; /* Center the loading icon */
+    width: 300px;
+    border-radius: 100%;
+}
+
 /* .loader {
     margin: auto;
     border: 20px solid #EAF0F6;
