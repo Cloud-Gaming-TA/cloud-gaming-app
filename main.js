@@ -18,8 +18,7 @@ clearStoreData();
 
 let mainWindow = null;
 let changeVar = 0;
-let changeVarRefresh = 0;
-let moonlightProcess = null;
+let moonlightProcess;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -195,7 +194,7 @@ ipcMain.on('open-moonlight', async () => {
             ];
 
             const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
-                stdio: 'inherit',
+                stdio: 'ignore',
                 windowsHide: true
             });
 
