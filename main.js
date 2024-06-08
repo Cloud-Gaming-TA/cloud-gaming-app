@@ -17,8 +17,8 @@ function clearStoreData() {
 clearStoreData();
 
 let mainWindow = null;
-let changeVar = 0;
 let moonlightProcess;
+let moonlightCheckInterval;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -83,19 +83,21 @@ app.on('ready', createWindow);
 
 async function isMoonlightRunning() {
     const processes = await psList();
-    console.log("Checking if moonlight is running");
     return processes.some(process => process.name === 'Moonlight.exe');
 }
 
 async function checkMoonlightStatus() {
-    while (true && changeVar === 0) {
+    while (true) {
         const running = await isMoonlightRunning();
-        console.log(running);
-        if (running) {
-            mainWindow.webContents.send('moonlight-status', true);
+        console.log('Moonlight running:', running);
+        if (!running) {
+            if (!mainWindow) {
+                createWindow();
+            }
+            clearInterval(moonlightCheckInterval);
             break;
         }
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
 }
 
@@ -105,9 +107,7 @@ async function getSessionId(username) {
     let errorStatusCode = 0;
     let sessionIdStatusCode = 0;
 
-    changeVar = 0;
-
-    while (changeVar === 0) {
+    while (true) {
         const accessToken = store.get('accessToken');
         try {
             response = await axios.post('http://10.11.1.181:3000/v1/games/play', {
@@ -123,11 +123,9 @@ async function getSessionId(username) {
 
             store.set('sessionId', sessionId);
             store.set('sessionIdStatusCode', sessionIdStatusCode);
-            
+
             console.log('Graphics card:', response.data.gpu_name);
-
-            changeVar = 1;
-
+            break;
         } catch (error) {
             console.error(error.response.data.message);
             errorStatusCode = error.response.status;
@@ -142,9 +140,8 @@ async function getSessionId(username) {
 async function getNetworkId(sessionId) {
     let networkId = '';
     let response;
-    changeVar = 0;
 
-    while (networkId === '' && changeVar === 0) {
+    while (networkId === '') {
         try {
             const accessToken = store.get('accessToken');
             response = await axios.get(`http://10.11.1.181:3000/v1/session/${sessionId}/status`, {
@@ -164,7 +161,6 @@ async function getNetworkId(sessionId) {
             console.error('Error fetching network ID!', error);
         }
     }
-    changeVar = 1;
     return networkId;
 }
 
@@ -193,17 +189,21 @@ ipcMain.on('open-moonlight', async () => {
                 '-token', accessToken
             ];
 
-            const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
+            moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
                 stdio: 'ignore',
                 windowsHide: true
             });
 
             console.log("should be running the terminal now...");
 
-            const running = await isMoonlightRunning();
-            mainWindow.webContents.send('moonlight-status', running);
+            // Close main window after a delay of 5-10 seconds
+            setTimeout(() => {
+                if (mainWindow) {
+                    mainWindow.close();
+                }
+            }, 5000); // Delay set to 5000 milliseconds (5 seconds)
 
-            checkMoonlightStatus();
+            moonlightCheckInterval = setInterval(checkMoonlightStatus, 1000);
         } else {
             console.log("Cannot continue process :(");
         }
@@ -318,8 +318,8 @@ ipcMain.on('cancel-loading', async () => {
             ];
             // Spawn the PowerShell process
             const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
-                stdio: 'ignore', // Show the terminal window
-                windowsHide: true // Ensure the terminal window is not hidden
+                stdio: 'ignore',
+                windowsHide: true
             });
         } else {
             console.warn('Network ID not found');
@@ -327,8 +327,6 @@ ipcMain.on('cancel-loading', async () => {
     } catch (error) {
         console.error('Error deleting network:', error);
     }
-
-    changeVar = 1;
 
     store.delete('sessionId');
     store.delete('networkId');
@@ -341,7 +339,6 @@ ipcMain.on('cancel-loading-queue', async () => {
     mainWindow.loadURL(`file://${__dirname}/mainpage.html`);
 });
 
-// maybe not used
 ipcMain.on('get-network-id', (event) => {
     const networkId = store.get('networkId');
     if (networkId !== null && networkId !== undefined) {
@@ -374,8 +371,6 @@ ipcMain.on('logout', async () => {
     store.delete('sessionId'); // If you also want to clear the session ID from the store
     store.delete('username');
 
-    changeVar = 1;
-
     // Load the login page
     mainWindow.loadURL(`file://${path.join(__dirname, 'login.html')}`);
 });
@@ -384,4 +379,4 @@ ipcMain.handle('get-session-id-status-code', (event) => {
     const sesIdStatCode = store.get('sessionIdStatusCode');
     console.log("Stat code is:", sesIdStatCode);
     return sesIdStatCode;
-})
+});
