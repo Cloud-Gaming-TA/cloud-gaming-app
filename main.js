@@ -65,7 +65,7 @@ function createWindow() {
                 const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
                 const args = ['-network_id', networkId];
                 const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
-                    stdio: 'inherit',
+                    stdio: 'ignore',
                     windowsHide: true
                 });
             } else {
@@ -101,7 +101,7 @@ async function checkMoonlightStatus() {
 }
 
 async function getSessionId(username) {
-    let sessionId = '';
+    let sessionId;
     let response;
     let errorStatusCode = 0;
     let sessionIdStatusCode = 0;
@@ -220,7 +220,7 @@ ipcMain.on('quit-app', async () => {
     const args = ['-network_id', networkId];
 
     const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
-        stdio: 'inherit',
+        stdio: 'ignore',
         windowsHide: true
     });
 
@@ -311,23 +311,23 @@ ipcMain.on('cancel-loading', async () => {
         console.error('Error terminating session:', error);
     }
 
-    // try {
-    //     if (networkId) {
-    //         const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
-    //         const args = [
-    //             '-network_id', networkId
-    //         ];
-    //         // Spawn the PowerShell process
-    //         const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
-    //             stdio: 'inherit', // Show the terminal window
-    //             windowsHide: true // Ensure the terminal window is not hidden
-    //         });
-    //     } else {
-    //         console.warn('Network ID not found');
-    //     };
-    // } catch (error) {
-    //     console.error('Error deleting network:', error);
-    // }
+    try {
+        if (networkId) {
+            const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
+            const args = [
+                '-network_id', networkId
+            ];
+            // Spawn the PowerShell process
+            const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
+                stdio: 'ignore', // Show the terminal window
+                windowsHide: true // Ensure the terminal window is not hidden
+            });
+        } else {
+            console.warn('Network ID not found');
+        };
+    } catch (error) {
+        console.error('Error deleting network:', error);
+    }
 
     changeVar = 1;
 
