@@ -39,42 +39,6 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
 
     mainWindow.on('closed', async () => {
-        console.log('Closed, Goodbye 1!');
-        const accessToken = store.get('accessToken');
-        const sessionId = store.get('sessionId');
-        const networkId = store.get('networkId');
-
-        try {
-            if (sessionId) {
-                const response = await axios.delete(`http://10.11.1.181:3000/v1/session/${sessionId}/terminate`, {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`
-                    }
-                });
-                console.log('Session terminated successfully');
-            } else {
-                console.warn('Session ID not found.');
-            }
-        } catch (error) {
-            console.error('Error terminating session:', error.response.data);
-        }
-
-        try {
-            if (networkId) {
-                const scriptPath = path.join(__dirname, './auto-scripts/ZeroTierAuto/controller/clientEnd.ps1');
-                const args = ['-network_id', networkId];
-                const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
-                    stdio: 'ignore',
-                    windowsHide: true
-                });
-            } else {
-                console.warn('Network ID not found');
-            }
-        } catch (error) {
-            console.error('Error deleting network:', error.response.data);
-        }
-
-        console.log('Closed, Goodbye 2!');
         mainWindow = null;
     });
 }
@@ -87,19 +51,34 @@ async function isMoonlightRunning() {
 }
 
 async function checkMoonlightStatus() {
+    let moonlightStarted = false;
+
     while (true) {
         const running = await isMoonlightRunning();
         console.log('Moonlight running:', running);
-        if (!running) {
-            if (!mainWindow) {
+
+        if (running && !moonlightStarted) {
+            moonlightStarted = true;
+            setTimeout(() => {
+                if (mainWindow) {
+                    mainWindow.hide();
+                }
+            }, 5000); // Wait for 5 seconds before hiding the main window
+        }
+
+        if (!running && moonlightStarted) {
+            if (mainWindow) {
+                mainWindow.show();
+            } else {
                 createWindow();
             }
-            clearInterval(moonlightCheckInterval);
             break;
         }
+
         await new Promise(resolve => setTimeout(resolve, 1000));
     }
 }
+
 
 async function getSessionId(username) {
     let sessionId;
@@ -189,21 +168,14 @@ ipcMain.on('open-moonlight', async () => {
                 '-token', accessToken
             ];
 
-            moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
+            const moonlightProcess = spawn('powershell.exe', [scriptPath, ...args], {
                 stdio: 'ignore',
                 windowsHide: true
             });
 
             console.log("should be running the terminal now...");
 
-            // Close main window after a delay of 5-10 seconds
-            setTimeout(() => {
-                if (mainWindow) {
-                    mainWindow.close();
-                }
-            }, 5000); // Delay set to 5000 milliseconds (5 seconds)
-
-            moonlightCheckInterval = setInterval(checkMoonlightStatus, 1000);
+            checkMoonlightStatus();
         } else {
             console.log("Cannot continue process :(");
         }
