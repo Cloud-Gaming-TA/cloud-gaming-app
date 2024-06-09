@@ -1,15 +1,8 @@
 @import "https://unpkg.com/open-props@1.6.17/easings.min.css";
 
 :root {
-    --gradient: linear-gradient(90deg,
-            #6eccee,
-            #f672ca,
-            #fdb428,
-            #b9f);
-    --red-sheen: linear-gradient(to bottom,
-            hsl(12, 90%, 43%),
-            hsla(12, 40%, 70%, 0.5) 50%,
-            hsl(12, 93%, 23%));
+    --gradient: linear-gradient(90deg, #6eccee, #f672ca, #fdb428, #b9f);
+    --red-sheen: linear-gradient(to bottom, hsl(12, 90%, 43%), hsla(12, 40%, 70%, 0.5) 50%, hsl(12, 93%, 23%));
 }
 
 body {
@@ -28,6 +21,14 @@ body {
     /* Prevent scrollbars during animation */
     font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
     /* Apply font stack */
+}
+
+#inside {
+    flex-direction: column;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
 }
 
 #welcomeMessage {
@@ -63,6 +64,8 @@ body {
     text-transform: uppercase;
     perspective: 1000px;
     overflow: hidden;
+    position: relative;
+    /* Added to support the sheen effect */
 }
 
 .btn::before {
@@ -99,14 +102,14 @@ body {
 
 #openAppBtn:hover {
     background-color: #002c06;
-    color:#00ce11;
+    color: #00ce11;
     transition-delay: 0.1s;
     /* Delay the background color change */
 }
 
 #quitAppBtn:hover {
     background-color: #380000;
-    color:#d60000;
+    color: #d60000;
     transition-delay: 0.1s;
     /* Delay the background color change */
 }
@@ -143,6 +146,7 @@ body {
     0% {
         background-position: 0%;
     }
+
     100% {
         background-position: 400%;
     }
@@ -163,17 +167,59 @@ body {
     }
 }
 
-/* [anim="sheen"]:not(.toggled)::after {
-    animation: sheen var(--ease-elastic-in-1) 1s;
+.dropdown {
+    margin: 40px auto;
+    /* position: relative; */
+    display: inline-block;
+    border-radius: 20%;
+    padding: 16px 24px;
+    /* Adjusted padding for button size */
 }
 
-[anim="sheen"]::after {
-    content: "";
+.dropdown-content {
+    display: none;
     position: absolute;
-    top: -50%;
-    right: -50%;
-    bottom: -50%;
-    left: -50%;
-    background: var(--red-sheen);
-    transform: rotateZ(60deg) translate(-5em, 7.5em);
-  } */
+    background-color: #05138f;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+}
+
+.dropdown-content a {
+    color: rgb(255, 255, 255);
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {
+    background-color: #f1f1f1;
+    color: #232323;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.dropdown:hover .dropbtn {
+    background-color: #2980B9;
+}
+
+.dropbtn {
+    background-color: #3498DB;
+    color: white;
+    padding: 16px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    /* Ensure full width for better centering */
+    box-sizing: border-box;
+    white-space: nowrap;
+    /* Prevent text wrapping */
+}
+
+.dropdown-content .selected {
+    background-color: #08456e;
+    color: white;
+}

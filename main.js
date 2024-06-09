@@ -19,6 +19,7 @@ clearStoreData();
 let mainWindow = null;
 let moonlightProcess;
 let moonlightCheckInterval;
+let changeVar = 0;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -79,19 +80,32 @@ async function checkMoonlightStatus() {
     }
 }
 
+ipcMain.on('request-gpu-list', async (event) => {
+    try {
+        const response = await axios.get('http://10.11.1.181:3000/v1/session/gpu');
+        if (response.data.status === 'success') {
+            event.reply('gpu-list', response.data.gpu);
+        } else {
+            console.error('Failed to fetch GPUs');
+        }
+    } catch (error) {
+        console.error('Error fetching GPUs:', error);
+    }
+});
 
-async function getSessionId(username) {
+async function getSessionId(username, gpuName) {
     let sessionId;
     let response;
     let errorStatusCode = 0;
     let sessionIdStatusCode = 0;
 
-    while (true) {
+    while (changeVar === 0) {
         const accessToken = store.get('accessToken');
         try {
             response = await axios.post('http://10.11.1.181:3000/v1/games/play', {
                 game_id: 1174180,
-                username: username
+                username: username,
+                gpu: gpuName
             }, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`
@@ -143,15 +157,23 @@ async function getNetworkId(sessionId) {
     return networkId;
 }
 
-ipcMain.on('open-moonlight', async () => {
+ipcMain.on('open-moonlight', async (event, args) => {
     console.log("success open-moonlight!");
+    changeVar = 0;
     try {
         console.log("now I'm going to try!");
         const username = store.get('username');
         const accessToken = store.get('accessToken');
+        const gpuName = args.gpuName;
+
+        console.log("Gpu is:", gpuName);
+
+        if (!gpuName) {
+            gpuName = "";
+        }
 
         let sessionId;
-        sessionId = await getSessionId(username);
+        sessionId = await getSessionId(username, gpuName);
         console.log("session id is :", sessionId);
 
         let networkId;
@@ -302,6 +324,8 @@ ipcMain.on('cancel-loading', async () => {
 
     store.delete('sessionId');
     store.delete('networkId');
+
+    changeVar = 1;
 
     // Redirect to mainpage.html
     mainWindow.loadURL(`file://${__dirname}/mainpage.html`);

@@ -10,12 +10,22 @@
 </head>
 
 <body class="fade_in_bottom">
-    <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+    <div id="inside">
         <div class="text-center">
             <h1 id="welcomeMessage"></h1>
+
             <button class="btn" id="logoutBtn">Logout</button>
             <button class="btn" id="openAppBtn">Play</button>
             <button class="btn" id="quitAppBtn">Quit App</button> <!-- New button -->
+
+            <!-- Moved the dropdown below the buttons -->
+
+        </div>
+        <div class="dropdown">
+            <button id="gpuSelectButton" class="dropbtn">Select GPU</button>
+            <div id="gpuDropdown" class="dropdown-content">
+                <!-- GPU options will be populated here by JavaScript -->
+            </div>
         </div>
     </div>
 </body>
